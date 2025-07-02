@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Seguimiento Diario</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #1c1c1e;
+      color: #f2f2f7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 32px;
+      text-transform: uppercase;
+    }
+
+    .container {
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .card {
+      background-color: #2c2c2e;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      min-width: 280px;
+      max-width: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    input[type="radio"], input[type="checkbox"] {
+      accent-color: #0a84ff;
+      transform: scale(1.1);
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-start;
+    }
+
+    button {
+      background-color: #0a84ff;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #0060df;
+    }
+
+    .small-text {
+      font-size: 13px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <h1>SEGUIMIENTO DIARIO DE PRODUCTIVIDAD</h1>
+  <div class="container">
+    <div class="card">
+      <h2>Fecha: <span id="fecha"></span></h2>
+      <label><input type="radio" name="productivo" value="sí"> Día productivo</label>
+      <label><input type="radio" name="productivo" value="no"> Día no productivo</label>
+
+      <div id="opciones-productivas" style="display: none;">
+        <h2>Qué hiciste hoy</h2>
+        <label><input type="checkbox" value="leer"> Leer</label>
+        <label><input type="checkbox" value="buena higiene"> Buena higiene</label>
+        <label><input type="checkbox" value="ejercicio"> Ejercicio</label>
+        <label><input type="checkbox" value="comida buena"> Buena comida</label>
+        <label><input type="checkbox" value="estudio"> Estudio</label>
+        <label><input type="checkbox" value="identidad"> Identidad</label>
+        <label><input type="checkbox" value="ordenado"> Ordenado</label>
+        <label><input type="checkbox" value="guitarra"> Guitarra</label>
+        <label><input type="checkbox" value="sociabilidad"> Sociabilidad</label>
+      </div>
+
+      <div id="opciones-no-productivas" style="display: none;">
+        <h2>Qué caracterizó tu día</h2>
+        <label><input type="checkbox" value="paja"> Paja</label>
+        <label><input type="checkbox" value="mala comida"> Mala comida</label>
+        <label><input type="checkbox" value="no ejercicio"> No ejercicio</label>
+        <label><input type="checkbox" value="no leer"> No leer</label>
+        <label><input type="checkbox" value="no guitarra"> No guitarra</label>
+        <label><input type="checkbox" value="mal estudio"> Mal estudio</label>
+        <label><input type="checkbox" value="identidad"> Identidad</label>
+        <label><input type="checkbox" value="desorden"> Desorden</label>
+        <label><input type="checkbox" value="virgen"> Virgen</label>
+      </div>
+
+      <div class="buttons">
+        <button onclick="guardarDia()">Guardar</button>
+        <button onclick="resetearDia()">Resetear</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Resumen</h2>
+      <p class="small-text">Días productivos: <span id="contador-productivos">0</span></p>
+      <p class="small-text">Días no productivos: <span id="contador-no-productivos">0</span></p>
+      <p class="small-text">Porcentaje del día: <span id="porcentaje">0%</span></p>
+      <p class="small-text" id="resumen-extra"></p>
+    </div>
+  </div>
+
+  <script>
+    const fechaHoy = new Date();
+    const fechaHoyStr = fechaHoy.toLocaleDateString("es-ES");
+    document.getElementById("fecha").textContent = fechaHoyStr;
+
+    const radios = document.getElementsByName("productivo");
+    radios.forEach(radio => {
+      radio.addEventListener("change", () => {
+        document.getElementById("opciones-productivas").style.display = radio.value === "sí" ? "block" : "none";
+        document.getElementById("opciones-no-productivas").style.display = radio.value === "no" ? "block" : "none";
+      });
+    });
+
+    let historial = {};
+    let fechaInicio = null;
+
+    const pesosProductivo = {
+      'leer': 2,
+      'buena higiene': 1,
+      'ejercicio': 2,
+      'comida buena': 1,
+      'estudio': 1,
+      'identidad': 1,
+      'ordenado': 1,
+      'guitarra': 1,
+      'sociabilidad': 2
+    };
+
+    const pesosNoProductivo = {
+      'paja': 2,
+      'mala comida': 1,
+      'no ejercicio': 2,
+      'no leer': 1,
+      'no guitarra': 1,
+      'mal estudio': 1,
+      'identidad': 1,
+      'desorden': 1,
+      'virgen': 2
+    };
+
+    function calcularPuntaje(pesos) {
+      let puntaje = 0;
+      let total = 0;
+      for (const key in pesos) {
+        total += pesos[key];
+        const checkbox = document.querySelector(`input[type=checkbox][value='${key}']`);
+        if (checkbox && checkbox.checked) {
+          puntaje += pesos[key];
+        }
+      }
+      return ((puntaje / total) * 100).toFixed(1);
+    }
+
+    function guardarDia() {
+      const valor = [...radios].find(r => r.checked)?.value;
+      if (!valor) return alert("Seleccioná si el día fue productivo o no.");
+
+      const fechaStr = new Date().toISOString().split('T')[0];
+      if (!fechaInicio) fechaInicio = new Date(fechaStr);
+      if (historial[fechaStr]) return alert("Ya registraste este día. Resetealo si querés cambiarlo.");
+
+      const diasDesdeInicio = Math.floor((new Date(fechaStr) - fechaInicio) / (1000 * 60 * 60 * 24)) + 1;
+      const totalDiasRegistrados = Object.keys(historial).length;
+      if (totalDiasRegistrados >= diasDesdeInicio) {
+        return alert("No se pueden cargar más días de los que han pasado desde que empezaste.");
+      }
+
+      let puntajeDia = 0;
+      if (valor === "sí") {
+        puntajeDia = calcularPuntaje(pesosProductivo);
+      } else {
+        puntajeDia = 100 - calcularPuntaje(pesosNoProductivo);
+      }
+
+      historial[fechaStr] = { tipo: valor, puntaje: puntajeDia };
+      actualizarResumen();
+      resetearInputs();
+    }
+
+    function resetearInputs() {
+      radios.forEach(r => r.checked = false);
+      document.querySelectorAll("input[type=checkbox]").forEach(c => c.checked = false);
+      document.getElementById("opciones-productivas").style.display = "none";
+      document.getElementById("opciones-no-productivas").style.display = "none";
+    }
+
+    function resetearDia() {
+      const fechaStr = new Date().toISOString().split('T')[0];
+      if (historial[fechaStr]) {
+        delete historial[fechaStr];
+        actualizarResumen();
+        alert("Día reseteado.");
+      } else {
+        alert("Este día no fue registrado todavía.");
+      }
+    }
+
+    function actualizarResumen() {
+      let productivos = 0;
+      let noProductivos = 0;
+      for (const fecha in historial) {
+        if (historial[fecha].tipo === "sí") productivos++;
+        else noProductivos++;
+      }
+      const total = productivos + noProductivos;
+      const porcentajeTotal = total ? ((productivos / total) * 100).toFixed(1) : 0;
+
+      document.getElementById("contador-productivos").textContent = productivos;
+      document.getElementById("contador-no-productivos").textContent = noProductivos;
+      document.getElementById("porcentaje").textContent = porcentajeTotal + "%";
+
+      const hoyStr = new Date().toISOString().split('T')[0];
+      document.getElementById("resumen-extra").textContent = historial[hoyStr] ? `Puntaje de este día: ${historial[hoyStr].puntaje}%` : "";
+    }
+  </script>
+</body>
+</html>
